@@ -1,0 +1,10 @@
+.env
+storage/logs/*.log
+public/assets/uploads/*
+!public/assets/uploads/.gitkeep
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
