@@ -30,29 +30,68 @@
 
                     <!-- Options -->
                     <?php if (!empty($product['options'])): ?>
+                        <?php
+                        $groupLabels = [
+                            'viande'      => '🥩 Votre viande',
+                            'taille_menu' => '🍱 Votre formule',
+                            'supplements' => '➕ Suppléments',
+                            'sauces'      => '🍶 Sauce',
+                            'taille'      => '📏 Taille',
+                        ];
+                        $groupOrder = ['viande', 'taille_menu', 'supplements', 'sauces', 'taille'];
+                        $radioGroups = ['viande', 'taille_menu', 'sauces'];
+                        $grouped = [];
+                        foreach ($product['options'] as $opt) {
+                            $grouped[$opt['option_group']][] = $opt;
+                        }
+                        $sortedGroups = [];
+                        foreach ($groupOrder as $g) {
+                            if (isset($grouped[$g])) $sortedGroups[$g] = $grouped[$g];
+                        }
+                        foreach ($grouped as $g => $opts) {
+                            if (!isset($sortedGroups[$g])) $sortedGroups[$g] = $opts;
+                        }
+                        ?>
                         <div class="product-options" id="productOptions">
-                            <?php
-                            $grouped = [];
-                            foreach ($product['options'] as $opt) {
-                                $grouped[$opt['option_group']][] = $opt;
-                            }
-                            ?>
-                            <?php foreach ($grouped as $group => $options): ?>
-                                <div class="option-group">
-                                    <h4 class="option-group__title"><?= htmlspecialchars(ucfirst($group)) ?></h4>
-                                    <?php foreach ($options as $opt): ?>
-                                        <label class="option-item">
-                                            <input type="checkbox" name="options[]" value="<?= $opt['id'] ?>"
-                                                   data-price="<?= $opt['price_modifier'] ?>"
-                                                   class="product-option-cb">
-                                            <span class="option-item__name"><?= htmlspecialchars($opt['name']) ?></span>
-                                            <?php if ((float)$opt['price_modifier'] != 0): ?>
-                                                <span class="option-item__price">
-                                                    <?= (float)$opt['price_modifier'] > 0 ? '+' : '' ?><?= formatPrice(abs((float)$opt['price_modifier'])) ?>
+                            <?php foreach ($sortedGroups as $group => $options): ?>
+                                <?php
+                                $isRadio = in_array($group, $radioGroups)
+                                    || (($options[0]['option_type'] ?? '') === 'radio');
+                                ?>
+                                <div class="option-group" data-group="<?= $group ?>">
+                                    <h4 class="option-group__title">
+                                        <?= $groupLabels[$group] ?? htmlspecialchars(ucfirst(str_replace('_', ' ', $group))) ?>
+                                    </h4>
+                                    <div class="option-pills">
+                                        <?php foreach ($options as $i => $opt): ?>
+                                            <?php
+                                            $priceNum = (float)$opt['price_modifier'];
+                                            $isMenuFormule = $group === 'taille_menu'
+                                                && $opt['id'] !== 'burger_seul'
+                                                && $priceNum > 0;
+                                            ?>
+                                            <label class="option-pill">
+                                                <input
+                                                    type="<?= $isRadio ? 'radio' : 'checkbox' ?>"
+                                                    name="<?= $isRadio ? 'opt_' . $group : 'options[]' ?>"
+                                                    value="<?= $opt['id'] ?>"
+                                                    data-price="<?= $opt['price_modifier'] ?>"
+                                                    class="product-option-input"
+                                                    <?= ($isRadio && $i === 0) ? 'checked' : '' ?>>
+                                                <span class="option-pill__body">
+                                                    <span class="option-pill__name"><?= htmlspecialchars($opt['name']) ?></span>
+                                                    <?php if ($priceNum != 0): ?>
+                                                        <span class="option-pill__price">
+                                                            <?= $priceNum > 0 ? '+' : '' ?><?= formatPrice(abs($priceNum)) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if ($isMenuFormule): ?>
+                                                        <span style="display:block;font-size:.72rem;opacity:.75;margin-top:.1rem">🍟+🥤 inclus</span>
+                                                    <?php endif; ?>
                                                 </span>
-                                            <?php endif; ?>
-                                        </label>
-                                    <?php endforeach; ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>

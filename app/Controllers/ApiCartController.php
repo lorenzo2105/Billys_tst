@@ -64,13 +64,14 @@ class ApiCartController extends Controller
         if (!empty($options)) {
             $db = \App\Core\Database::getInstance();
             foreach ($options as $optId) {
-                // Handle virtual viande options
+                // Handle virtual viande/formule options
                 if ($optId === 'simple') {
-                    $optionNames[] = 'Simple (1 viande)';
-                    // Simple = 0 XPF (prix de base)
+                    $optionNames[] = 'Simple 🥩';
                 } elseif ($optId === 'double') {
-                    $optionNames[] = 'Double (2 viandes)';
+                    $optionNames[] = 'Double 🥩🥩';
                     $optionsPrice += (float)$product['price_double'] - (float)$product['price'];
+                } elseif ($optId === 'burger_seul') {
+                    $optionNames[] = 'Burger seul';
                 } else {
                     // Real database options
                     $opt = $db->fetch("SELECT * FROM product_options WHERE id = :id", ['id' => (int)$optId]);

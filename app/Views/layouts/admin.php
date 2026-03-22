@@ -35,9 +35,6 @@
             <a href="<?= $baseUrl ?>/admin/supplements" class="sidebar__link <?= str_contains($_SERVER['REQUEST_URI'], '/supplements') ? 'active' : '' ?>">
                 <span>🍟</span> Suppléments
             </a>
-            <a href="<?= $baseUrl ?>/admin/settings" class="sidebar__link <?= str_contains($_SERVER['REQUEST_URI'], '/settings') ? 'active' : '' ?>">
-                <span>⚙️</span> Paramètres
-            </a>
             <hr>
             <a href="<?= $baseUrl ?>/kitchen" class="sidebar__link">
                 <span>👨‍🍳</span> Cuisine

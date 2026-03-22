@@ -27,7 +27,7 @@
                     </div>
                     <div class="form-group">
                         <label for="new_price">Prix</label>
-                        <input type="number" id="new_price" name="price" step="10" min="0" value="0" required>
+                        <input type="number" id="new_price" name="price" step="1" min="0" value="0" required>
                     </div>
                 </div>
                 <div class="form-actions" style="margin-top:1rem">
@@ -63,7 +63,7 @@
                                 </td>
                                 <td>
                                     <input type="number" name="price" value="<?= (float)$supp['price'] ?>" 
-                                           step="10" min="0"
+                                           step="1" min="0"
                                            style="width:120px;padding:.375rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-gray);color:var(--text);">
                                 </td>
                                 <td>

@@ -52,11 +52,43 @@
 
             <div class="form-group">
                 <label for="price_double">🥩🥩 Prix Burger Double</label>
-                <input type="number" id="price_double" name="price_double" step="10" min="0"
+                <input type="number" id="price_double" name="price_double" step="1" min="0"
                        value="<?= htmlspecialchars($old['price_double'] ?? $product['price_double'] ?? '') ?>"
-                       placeholder="Laisser vide si non burger">
-                <small style="color: var(--text-muted);">Prix du burger avec 2 viandes</small>
+                       placeholder="Laisser vide si non burger"
+                       oninput="toggleBurgerMenuSection(this.value)">
+                <small style="color: var(--text-muted);">Prix du burger avec 2 viandes (laisser vide si ce n'est pas un burger)</small>
             </div>
+
+            <!-- Burger Menu Configuration -->
+            <?php $hasPriceDouble = !empty($old['price_double'] ?? $product['price_double'] ?? ''); ?>
+            <div class="form-group form-group--full" id="burgerMenuSection"
+                 style="<?= $hasPriceDouble ? '' : 'display:none;' ?>border:2px solid var(--primary);border-radius:var(--radius);padding:1.25rem;background:var(--bg-gray);">
+                <label style="display:block;margin-bottom:.5rem;font-size:.95rem;font-weight:700">
+                    🍱 Configuration des Menus Burger
+                </label>
+                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">
+                    Définissez le supplément de prix pour les formules. <strong>Burger seul</strong> est toujours inclus sans frais. Laisser vide pour désactiver une formule.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="menu_m_price">🍱 Supplément Menu M <small style="color:var(--text-muted)">(Frites M + Boisson M)</small></label>
+                        <input type="number" id="menu_m_price" name="menu_m_price" step="1" min="0"
+                               value="<?= htmlspecialchars(isset($menuPrices['Menu M']) ? (string)$menuPrices['Menu M'] : '') ?>"
+                               placeholder="ex: 350">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="menu_l_price">🍱 Supplément Menu L <small style="color:var(--text-muted)">(Frites L + Boisson L)</small></label>
+                        <input type="number" id="menu_l_price" name="menu_l_price" step="1" min="0"
+                               value="<?= htmlspecialchars(isset($menuPrices['Menu L']) ? (string)$menuPrices['Menu L'] : '') ?>"
+                               placeholder="ex: 450">
+                    </div>
+                </div>
+            </div>
+            <script>
+            function toggleBurgerMenuSection(val) {
+                document.getElementById('burgerMenuSection').style.display = val ? '' : 'none';
+            }
+            </script>
 
             <div class="form-group">
                 <label for="status">Statut</label>
@@ -94,6 +126,34 @@
                     Produit mis en avant (Best-Seller)
                 </label>
             </div>
+
+            <!-- Restaurant Availability Section (edit only) -->
+            <?php if ($isEdit && !empty($restaurantAvailability ?? [])): ?>
+            <div class="form-group form-group--full" style="border-top:1px solid var(--border);padding-top:1.5rem;margin-top:1.5rem">
+                <label style="display:block;margin-bottom:.5rem;font-size:1rem;font-weight:700">
+                    🏪 Disponibilité par restaurant
+                </label>
+                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">
+                    Décochez un restaurant pour rendre ce produit indisponible uniquement dans ce point de vente.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">
+                    <?php foreach ($restaurantAvailability as $rid => $ra): ?>
+                        <label class="checkbox-label" style="padding:.875rem;background:var(--bg-gray);border-radius:var(--radius-sm);border:2px solid <?= $ra['is_available'] ? 'var(--success,#22c55e)' : 'var(--danger,#ef4444)' ?>;cursor:pointer"
+                               id="resto-label-<?= $rid ?>">
+                            <input type="checkbox" name="available_restaurants[]" value="<?= $rid ?>"
+                                   <?= $ra['is_available'] ? 'checked' : '' ?>
+                                   onchange="document.getElementById('resto-label-<?= $rid ?>').style.borderColor=this.checked?'var(--success,#22c55e)':'var(--danger,#ef4444)'">
+                            <span style="flex:1">
+                                <strong><?= htmlspecialchars($ra['restaurant_name']) ?></strong>
+                                <span style="display:block;font-size:.8rem;color:var(--text-muted);margin-top:.15rem">
+                                    <?= $ra['is_available'] ? '✅ Disponible' : '❌ Indisponible' ?>
+                                </span>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Supplements Section -->
             <div class="form-group form-group--full" style="border-top:1px solid var(--border);padding-top:1.5rem;margin-top:1.5rem">
@@ -136,79 +196,3 @@
         </div>
     </form>
 </div>
-
-<?php if ($isEdit): ?>
-<?php
-$groupLabels = [
-    'viande'      => '🥩 Viande',
-    'taille_menu' => '🍱 Taille du Menu',
-    'supplements' => '➕ Suppléments',
-    'sauces'      => '🍶 Sauces',
-    'taille'      => '📏 Taille',
-];
-$optionsByGroup = [];
-foreach ($product['options'] ?? [] as $opt) {
-    $optionsByGroup[$opt['option_group']][] = $opt;
-}
-?>
-<div class="admin-card" style="margin-top:1.5rem">
-    <div class="admin-card__header">
-        <h2>Options de ce produit</h2>
-        <span class="text-muted" style="font-size:.85rem"><?= count($product['options'] ?? []) ?> option(s)</span>
-    </div>
-
-    <?php if (!empty($optionsByGroup)): ?>
-        <?php foreach ($optionsByGroup as $group => $opts): ?>
-        <?php if ($group === 'viande') continue; // Skip viande - auto-generated from prices ?>
-        <div style="margin-bottom:1.25rem">
-            <h4 style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:.5rem">
-                <?= htmlspecialchars($groupLabels[$group] ?? ucfirst(str_replace('_', ' ', $group))) ?>
-                <span class="badge" style="margin-left:.375rem;text-transform:none;letter-spacing:0">
-                    <?= ($opts[0]['option_type'] ?? 'checkbox') === 'radio' ? '● Choix unique' : '☑ Multi-sélection' ?>
-                </span>
-            </h4>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th>Nom</th><th>Prix modifier</th><th>Actions</th></tr></thead>
-                    <tbody>
-                        <?php foreach ($opts as $opt): ?>
-                        <tr>
-                            <td>
-                                <form method="POST" action="<?= $baseUrl ?>/admin/product/option/update/<?= $opt['id'] ?>" style="display:inline">
-                                    <?= $csrf ?>
-                                    <input type="text" name="name" value="<?= htmlspecialchars($opt['name']) ?>" 
-                                           style="width:200px;padding:.375rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-gray);color:var(--text);">
-                            </td>
-                            <td>
-                                <input type="number" name="price_modifier" value="<?= (float)$opt['price_modifier'] ?>" 
-                                       step="10" 
-                                       style="width:120px;padding:.375rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-gray);color:var(--text);">
-                            </td>
-                            <td style="white-space:nowrap">
-                                    <button type="submit" class="btn btn--sm btn--primary">💾 Sauver</button>
-                                </form>
-                                <form method="POST" action="<?= $baseUrl ?>/admin/product/option/delete/<?= $opt['id'] ?>"
-                                      style="display:inline;margin-left:.25rem" onsubmit="return confirm('Supprimer cette option ?')">
-                                    <?= $csrf ?>
-                                    <button type="submit" class="btn btn--sm btn--danger">🗑️</button>
-                                </form>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <p class="text-muted p-2">Aucune option configurée pour ce produit.</p>
-    <?php endif; ?>
-
-    <div style="border-top:1px solid var(--border);padding-top:1rem;margin-top:.5rem">
-        <p style="color:var(--text-muted);font-size:.9rem;text-align:center;padding:1rem">
-            💡 Les options Simple/Double sont générées automatiquement depuis les prix du burger.<br>
-            Les suppléments sont gérés dans <a href="<?= $baseUrl ?>/admin/supplements" style="color:var(--primary)">Admin → Suppléments</a>
-        </p>
-    </div>
-</div>
-<?php endif; ?>

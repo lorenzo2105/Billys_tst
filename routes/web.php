@@ -61,9 +61,6 @@ $router->post('/admin/product/{id}/option/store', 'AdminController', 'storeOptio
 $router->post('/admin/product/option/update/{optionId}', 'AdminController', 'updateOption', ['admin', 'csrf']);
 $router->post('/admin/product/option/delete/{optionId}', 'AdminController', 'deleteOption', ['admin', 'csrf']);
 
-$router->get('/admin/settings', 'AdminController', 'settings', ['admin']);
-$router->post('/admin/settings/update', 'AdminController', 'updateSettings', ['admin', 'csrf']);
-
 $router->get('/admin/supplements', 'AdminController', 'supplements', ['admin']);
 $router->post('/admin/supplements/store', 'AdminController', 'storeSupplement', ['admin', 'csrf']);
 $router->post('/admin/supplements/update/{id}', 'AdminController', 'updateSupplement', ['admin', 'csrf']);

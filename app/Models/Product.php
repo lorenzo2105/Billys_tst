@@ -99,4 +99,23 @@ class Product extends Model
             ]
         );
     }
+
+    public function getAvailabilityPerRestaurant(int $productId): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT r.id as restaurant_id, r.name as restaurant_name,
+                    COALESCE(pr.is_available, 1) as is_available,
+                    COALESCE(pr.stock_status, 'in_stock') as stock_status
+             FROM restaurants r
+             LEFT JOIN product_restaurant pr ON pr.product_id = :pid AND pr.restaurant_id = r.id
+             WHERE r.is_active = 1
+             ORDER BY r.name ASC",
+            ['pid' => $productId]
+        );
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['restaurant_id']] = $row;
+        }
+        return $result;
+    }
 }

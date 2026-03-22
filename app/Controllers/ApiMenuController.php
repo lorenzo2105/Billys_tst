@@ -42,12 +42,12 @@ class ApiMenuController extends Controller
             return;
         }
 
-        // Generate virtual viande options from product prices
+        // Generate virtual viande + taille_menu options for burgers
         if (isset($product['price_double']) && $product['price_double'] > 0) {
             $viandeOptions = [
                 [
                     'id' => 'simple',
-                    'name' => 'Simple (1 viande)',
+                    'name' => 'Simple 🥩',
                     'option_group' => 'viande',
                     'option_type' => 'radio',
                     'price_modifier' => 0,
@@ -55,16 +55,22 @@ class ApiMenuController extends Controller
                 ],
                 [
                     'id' => 'double',
-                    'name' => 'Double (2 viandes)',
+                    'name' => 'Double 🥩🥩',
                     'option_group' => 'viande',
                     'option_type' => 'radio',
                     'price_modifier' => (float)$product['price_double'] - (float)$product['price'],
                     'product_id' => $product['id']
                 ]
             ];
-            
-            // Prepend viande options to existing options
-            $product['options'] = array_merge($viandeOptions, $product['options'] ?? []);
+            $burgerSeul = [
+                'id'             => 'burger_seul',
+                'name'           => 'Burger seul',
+                'option_group'   => 'taille_menu',
+                'option_type'    => 'radio',
+                'price_modifier' => 0,
+                'product_id'     => $product['id'],
+            ];
+            $product['options'] = array_merge($viandeOptions, [$burgerSeul], $product['options'] ?? []);
         }
 
         // Load global supplements for this product

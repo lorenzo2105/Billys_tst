@@ -48,12 +48,6 @@
                         </td>
                         <td class="table-actions">
                             <a href="<?= $baseUrl ?>/admin/product/edit/<?= $product['id'] ?>" class="btn btn--sm btn--outline" title="Modifier">✏️</a>
-                            <form method="POST" action="<?= $baseUrl ?>/admin/product/toggle/<?= $product['id'] ?>" style="display:inline">
-                                <?= $csrf ?>
-                                <button type="submit" class="btn btn--sm btn--outline" title="Activer/Désactiver">
-                                    <?= $product['status'] === 'available' ? '🔴' : '🟢' ?>
-                                </button>
-                            </form>
                             <form method="POST" action="<?= $baseUrl ?>/admin/product/delete/<?= $product['id'] ?>"
                                   style="display:inline" onsubmit="return confirm('Supprimer ce produit ?')">
                                 <?= $csrf ?>

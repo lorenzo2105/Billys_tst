@@ -200,7 +200,7 @@ table { border-collapse: collapse; width: 100%; }
 .user-dropdown a {
     display: block;
     padding: .625rem 1rem;
-    color: var(--text);
+    color: var(--danger);
     font-size: .875rem;
     transition: background .15s;
 }

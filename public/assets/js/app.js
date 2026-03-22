@@ -172,18 +172,19 @@ const App = {
         const qtyPlus = document.getElementById('qtyPlus');
         const qtyInput = document.getElementById('productQty');
         const addBtn = document.getElementById('addToCartBtn');
-        const optionCbs = document.querySelectorAll('.product-option-cb');
         const priceDisplay = document.getElementById('productTotalPrice');
 
         if (!addBtn) return;
 
         const basePrice = parseFloat(addBtn.dataset.basePrice) || 0;
 
+        const getInputs = () => document.querySelectorAll('.product-option-input');
+
         const updatePrice = () => {
             let optionsPrice = 0;
-            optionCbs.forEach(cb => {
-                if (cb.checked) {
-                    optionsPrice += parseFloat(cb.dataset.price) || 0;
+            getInputs().forEach(input => {
+                if (input.checked) {
+                    optionsPrice += parseFloat(input.dataset.price) || 0;
                 }
             });
             const qty = parseInt(qtyInput?.value || '1');
@@ -207,15 +208,16 @@ const App = {
             });
         }
 
-        optionCbs.forEach(cb => cb.addEventListener('change', updatePrice));
+        getInputs().forEach(input => input.addEventListener('change', updatePrice));
+        updatePrice();
 
         addBtn.addEventListener('click', () => {
             const productId = addBtn.dataset.productId;
             const qty = parseInt(qtyInput?.value || '1');
             const restaurantId = document.getElementById('currentRestaurantId')?.value || 1;
             const selectedOptions = [];
-            optionCbs.forEach(cb => {
-                if (cb.checked) selectedOptions.push(cb.value);
+            getInputs().forEach(input => {
+                if (input.checked) selectedOptions.push(input.value);
             });
 
             this.addToCart(productId, qty, restaurantId, selectedOptions);
@@ -280,8 +282,7 @@ const App = {
         let optionsHtml = '';
         sortedGroups.forEach(([group, data]) => {
             const label = groupLabels[group] || group.replace('_', ' ');
-            // Force radio for viande and taille_menu groups
-            const isRadio = group === 'viande' || group === 'taille_menu' || data.type === 'radio';
+            const isRadio = group === 'viande' || group === 'taille_menu' || group === 'sauces' || data.type === 'radio';
             optionsHtml += `
                 <div class="option-group">
                     <h4 class="option-group__title">${label}</h4>
@@ -294,6 +295,10 @@ const App = {
                 const priceLabel = priceNum !== 0
                     ? `<span class="option-pill__price">${priceNum > 0 ? '+' : ''}${Math.round(Math.abs(priceNum)).toLocaleString('fr-FR')} XPF</span>`
                     : '';
+                const isMenuFormule = group === 'taille_menu' && opt.id !== 'burger_seul' && priceNum > 0;
+                const menuNote = isMenuFormule
+                    ? `<span style="display:block;font-size:.72rem;opacity:.75;margin-top:.1rem">🍟+🥤 inclus</span>`
+                    : '';
                 optionsHtml += `
                     <label class="option-pill">
                         <input type="${inputType}" name="opt_${group}" value="${opt.id}"
@@ -301,6 +306,7 @@ const App = {
                         <span class="option-pill__body">
                             <span class="option-pill__name">${this.escapeHtml(opt.name)}</span>
                             ${priceLabel}
+                            ${menuNote}
                         </span>
                     </label>`;
             });

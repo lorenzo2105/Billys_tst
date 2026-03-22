@@ -9,7 +9,6 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Restaurant;
 use App\Models\Order;
-use App\Models\Setting;
 use App\Models\GlobalSupplement;
 
 class AdminController extends Controller
@@ -43,6 +42,7 @@ class AdminController extends Controller
             'product' => null,
             'allSupplements' => (new GlobalSupplement())->getActive(),
             'assignedSupplementIds' => [],
+            'menuPrices' => [],
             'pageTitle' => 'Nouveau Produit',
         ], 'layouts.admin');
     }
@@ -86,14 +86,28 @@ class AdminController extends Controller
             (new GlobalSupplement())->assignToProduct((int)$productId, $supplements);
         }
 
+        // Save burger menu options (Menu M / Menu L)
+        $this->saveMenuOptions((int)$productId);
+
         Session::flash('success', 'Produit créé !');
         $this->redirect('/admin/products');
     }
 
     public function editProduct(string $id): void
     {
-        $product = (new Product())->getWithDetails((int)$id);
+        $productModel = new Product();
+        $product = $productModel->getWithDetails((int)$id);
         if (!$product) { $this->redirect('/admin/products'); return; }
+
+        $db = \App\Core\Database::getInstance();
+        $menuOptionRows = $db->fetchAll(
+            "SELECT name, price_modifier FROM product_options WHERE product_id = :pid AND option_group = 'taille_menu' AND name IN ('Menu M', 'Menu L')",
+            ['pid' => (int)$id]
+        );
+        $menuPrices = [];
+        foreach ($menuOptionRows as $mo) {
+            $menuPrices[$mo['name']] = (float)$mo['price_modifier'];
+        }
 
         $supplementModel = new GlobalSupplement();
         $this->layout('admin.product-form', [
@@ -101,6 +115,8 @@ class AdminController extends Controller
             'categories' => (new Category())->getActive(),
             'allSupplements' => $supplementModel->getActive(),
             'assignedSupplementIds' => $supplementModel->getAssignedIds((int)$id),
+            'restaurantAvailability' => $productModel->getAvailabilityPerRestaurant((int)$id),
+            'menuPrices' => $menuPrices,
             'pageTitle' => 'Modifier: ' . $product['name'],
         ], 'layouts.admin');
     }
@@ -133,6 +149,16 @@ class AdminController extends Controller
         // Update supplements assignment
         $supplements = $this->input('supplements', []);
         (new GlobalSupplement())->assignToProduct((int)$id, $supplements);
+
+        // Update burger menu options (Menu M / Menu L)
+        $this->saveMenuOptions((int)$id);
+
+        // Update availability per restaurant
+        $availableRestaurants = $this->input('available_restaurants', []);
+        foreach ((new Restaurant())->findAll() as $r) {
+            $isAvailable = in_array((string)$r['id'], (array)$availableRestaurants);
+            $productModel->updateAvailability((int)$id, (int)$r['id'], $isAvailable);
+        }
 
         Session::flash('success', 'Produit mis à jour !');
         $this->redirect('/admin/products');
@@ -232,8 +258,13 @@ class AdminController extends Controller
 
     public function orders(): void
     {
+        $restaurantId = isset($_GET['restaurant_id']) && (int)$_GET['restaurant_id'] > 0
+            ? (int)$_GET['restaurant_id']
+            : null;
         $this->layout('admin.orders', [
-            'orders' => (new Order())->getAllWithDetails(100),
+            'orders' => (new Order())->getAllWithDetails(200, $restaurantId),
+            'restaurants' => (new Restaurant())->findAll(),
+            'selectedRestaurantId' => $restaurantId,
             'pageTitle' => 'Gestion des Commandes',
         ], 'layouts.admin');
     }
@@ -328,6 +359,39 @@ class AdminController extends Controller
         }
     }
 
+    private function saveMenuOptions(int $productId): void
+    {
+        $db = \App\Core\Database::getInstance();
+        $menuOptions = [
+            'Menu M' => $this->input('menu_m_price'),
+            'Menu L' => $this->input('menu_l_price'),
+        ];
+        foreach ($menuOptions as $name => $price) {
+            if ($price !== null && $price !== '') {
+                $existing = $db->fetch(
+                    "SELECT id FROM product_options WHERE product_id = :pid AND name = :name AND option_group = 'taille_menu'",
+                    ['pid' => $productId, 'name' => $name]
+                );
+                if ($existing) {
+                    $db->execute(
+                        "UPDATE product_options SET price_modifier = :price WHERE id = :id",
+                        ['price' => (float)$price, 'id' => $existing['id']]
+                    );
+                } else {
+                    $db->insert(
+                        "INSERT INTO product_options (product_id, name, price_modifier, option_group, is_active) VALUES (:pid, :name, :price, 'taille_menu', 1)",
+                        ['pid' => $productId, 'name' => $name, 'price' => (float)$price]
+                    );
+                }
+            } else {
+                $db->execute(
+                    "DELETE FROM product_options WHERE product_id = :pid AND name = :name AND option_group = 'taille_menu'",
+                    ['pid' => $productId, 'name' => $name]
+                );
+            }
+        }
+    }
+
     private function extractProductData(): array
     {
         $data = [
@@ -382,34 +446,6 @@ class AdminController extends Controller
         }
         $text = preg_replace('/[^a-z0-9]+/', '-', $text);
         return trim($text, '-') . '-' . substr(uniqid(), -4);
-    }
-
-    // ── Settings Management ──────────────────────────────────
-    public function settings(): void
-    {
-        $settingModel = new Setting();
-        $settings = $settingModel->getAll();
-
-        $this->layout('admin.settings', [
-            'settings' => $settings,
-            'pageTitle' => 'Paramètres',
-        ], 'layouts.admin');
-    }
-
-    public function updateSettings(): void
-    {
-        $settingModel = new Setting();
-        
-        // Update burger prices
-        if ($this->input('burger_price_simple') !== null) {
-            $settingModel->set('burger_price_simple', $this->input('burger_price_simple'), 'decimal');
-        }
-        if ($this->input('burger_price_double') !== null) {
-            $settingModel->set('burger_price_double', $this->input('burger_price_double'), 'decimal');
-        }
-
-        Session::flash('success', 'Paramètres mis à jour avec succès.');
-        $this->redirect('/admin/settings');
     }
 
     // ── Supplements Management ────────────────────────────────

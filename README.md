@@ -10,11 +10,19 @@ Application web complète pour un restaurant Fast Food avec commandes en ligne, 
 
 ### Étapes
 
-1. **Base de données** : Ouvrir phpMyAdmin et exécuter le fichier SQL :
-   ```
-   storage/migrations/001_create_database.sql
-   ```
-   Cela crée la base `billys_fastfood` avec toutes les tables et données de démonstration.
+1. **Base de données** : Deux options disponibles :
+   
+   **Option A - Script automatique (recommandé)** :
+   - Accédez à `http://localhost/Billys_tst/public/install.php`
+   - Suivez les instructions à l'écran
+   - Le script crée automatiquement toutes les tables nécessaires
+   
+   **Option B - Manuel via phpMyAdmin** :
+   - Ouvrir phpMyAdmin et exécuter les fichiers SQL dans l'ordre :
+     ```
+     storage/migrations/001_create_database.sql
+     storage/migrations/002_add_global_supplements.sql
+     ```
 
 2. **Configuration** : Vérifier le fichier `.env` à la racine du projet :
    ```
@@ -96,6 +104,7 @@ Billys_tst/
 - **CRUD Catégories** : gestion complète avec ordre d'affichage
 - **Gestion restaurants** : modifier informations, activer/désactiver
 - **Suivi commandes** : liste complète avec détails
+- **Suppléments globaux** : gestion centralisée des suppléments réutilisables
 
 ## 🔐 Sécurité
 

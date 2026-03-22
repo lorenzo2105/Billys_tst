@@ -165,15 +165,17 @@ class Order extends Model
         );
     }
 
-    public function getAllWithDetails(int $limit = 50): array
+    public function getAllWithDetails(int $limit = 50, ?int $restaurantId = null): array
     {
         $limit = max(1, min($limit, 500));
+        $where = $restaurantId ? "WHERE o.restaurant_id = {$restaurantId}" : '';
         return $this->db->fetchAll(
             "SELECT o.*, r.name as restaurant_name, u.name as user_name,
                     (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
              FROM {$this->table} o
              JOIN restaurants r ON r.id = o.restaurant_id
              LEFT JOIN users u ON u.id = o.user_id
+             {$where}
              ORDER BY o.created_at DESC
              LIMIT {$limit}"
         );
