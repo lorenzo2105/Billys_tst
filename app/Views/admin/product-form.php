@@ -44,25 +44,23 @@
             </div>
 
             <div class="form-group">
-                <label for="price">🥩 Prix Burger Simple</label>
-                <input type="number" id="price" name="price" step="10" min="0" required
+                <label for="price" id="priceLabel">💰 Prix du produit</label>
+                <input type="number" id="price" name="price" step="1" min="0" required
                        value="<?= htmlspecialchars($old['price'] ?? $product['price'] ?? '0') ?>">
-                <small style="color: var(--text-muted);">Prix du burger avec 1 viande</small>
+                <small style="color: var(--text-muted);" id="priceHelp">Prix de base du produit</small>
             </div>
 
-            <div class="form-group">
-                <label for="price_double">🥩🥩 Prix Burger Double</label>
+            <div class="form-group" id="priceDoubleGroup">
+                <label for="price_double" id="priceDoubleLabel">🥩🥩 Prix Burger Double</label>
                 <input type="number" id="price_double" name="price_double" step="1" min="0"
                        value="<?= htmlspecialchars($old['price_double'] ?? $product['price_double'] ?? '') ?>"
-                       placeholder="Laisser vide si non burger"
-                       oninput="toggleBurgerMenuSection(this.value)">
-                <small style="color: var(--text-muted);">Prix du burger avec 2 viandes (laisser vide si ce n'est pas un burger)</small>
+                       placeholder="Laisser vide si non applicable">
+                <small style="color: var(--text-muted);" id="priceDoubleHelp">Prix du burger avec 2 viandes (laisser vide si ce n'est pas un burger)</small>
             </div>
 
             <!-- Burger Menu Configuration -->
-            <?php $hasPriceDouble = !empty($old['price_double'] ?? $product['price_double'] ?? ''); ?>
             <div class="form-group form-group--full" id="burgerMenuSection"
-                 style="<?= $hasPriceDouble ? '' : 'display:none;' ?>border:2px solid var(--primary);border-radius:var(--radius);padding:1.25rem;background:var(--bg-gray);">
+                 style="border:2px solid var(--primary);border-radius:var(--radius);padding:1.25rem;background:var(--bg-gray);">
                 <label style="display:block;margin-bottom:.5rem;font-size:.95rem;font-weight:700">
                     🍱 Configuration des Menus Burger
                 </label>
@@ -89,16 +87,6 @@
                 document.getElementById('burgerMenuSection').style.display = val ? '' : 'none';
             }
             </script>
-
-            <div class="form-group">
-                <label for="status">Statut</label>
-                <select id="status" name="status">
-                    <?php $currentStatus = $old['status'] ?? $product['status'] ?? 'available'; ?>
-                    <option value="available" <?= $currentStatus === 'available' ? 'selected' : '' ?>>Disponible</option>
-                    <option value="unavailable" <?= $currentStatus === 'unavailable' ? 'selected' : '' ?>>Indisponible</option>
-                    <option value="out_of_stock" <?= $currentStatus === 'out_of_stock' ? 'selected' : '' ?>>Rupture de stock</option>
-                </select>
-            </div>
 
             <div class="form-group form-group--full">
                 <label for="description">Description</label>
@@ -155,36 +143,16 @@
             </div>
             <?php endif; ?>
 
-            <!-- Supplements Section -->
+            <!-- Supplements Info -->
             <div class="form-group form-group--full" style="border-top:1px solid var(--border);padding-top:1.5rem;margin-top:1.5rem">
                 <label style="display:block;margin-bottom:1rem;font-size:1rem;font-weight:700">
-                    🍟 Suppléments disponibles pour ce produit
+                    🍟 Suppléments
                 </label>
-                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">
-                    Cochez les suppléments que vous souhaitez rendre disponibles pour ce produit.
-                    <a href="<?= $baseUrl ?>/admin/supplements" target="_blank" style="color:var(--primary)">Gérer tous les suppléments →</a>
+                <p style="color:var(--text-muted);font-size:.9rem;padding:1rem;background:var(--bg-gray);border-radius:var(--radius-sm);border-left:4px solid var(--primary)">
+                    💡 <strong>Les suppléments sont gérés automatiquement :</strong><br>
+                    • Tous les suppléments actifs s'appliquent automatiquement aux <strong>burgers uniquement</strong><br>
+                    • Gérez les suppléments (nom, prix, activation) dans <a href="<?= $baseUrl ?>/admin/supplements" style="color:var(--primary);text-decoration:underline">Admin → Suppléments</a>
                 </p>
-                <?php if (empty($allSupplements ?? [])): ?>
-                    <p style="color:var(--text-muted);font-size:.9rem">
-                        Aucun supplément disponible. 
-                        <a href="<?= $baseUrl ?>/admin/supplements" style="color:var(--primary)">Créer des suppléments</a>
-                    </p>
-                <?php else: ?>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.75rem">
-                        <?php foreach ($allSupplements as $supp): ?>
-                            <label class="checkbox-label" style="padding:.75rem;background:var(--bg-gray);border-radius:var(--radius-sm);border:1px solid var(--border)">
-                                <input type="checkbox" name="supplements[]" value="<?= $supp['id'] ?>"
-                                    <?= in_array($supp['id'], $assignedSupplementIds ?? []) ? 'checked' : '' ?>>
-                                <span style="flex:1">
-                                    <?= htmlspecialchars($supp['name']) ?>
-                                    <span style="color:var(--text-muted);font-size:.85rem">
-                                        (+<?= formatPrice($supp['price']) ?>)
-                                    </span>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -196,3 +164,81 @@
         </div>
     </form>
 </div>
+
+<script>
+// Adapter les labels selon la catégorie sélectionnée
+function updatePriceLabels() {
+    const categorySelect = document.getElementById('category_id');
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    const categoryName = selectedOption.text.toLowerCase();
+    
+    const priceLabel = document.getElementById('priceLabel');
+    const priceHelp = document.getElementById('priceHelp');
+    const priceDoubleGroup = document.getElementById('priceDoubleGroup');
+    const priceDoubleLabel = document.getElementById('priceDoubleLabel');
+    const priceDoubleHelp = document.getElementById('priceDoubleHelp');
+    const burgerMenuSection = document.getElementById('burgerMenuSection');
+    
+    // Déterminer le type de produit
+    if (categoryName.includes('burger')) {
+        // Catégorie Burgers
+        priceLabel.innerHTML = '🥩 Prix Burger Simple';
+        priceHelp.textContent = 'Prix du burger avec 1 viande';
+        priceDoubleLabel.innerHTML = '🥩🥩 Prix Burger Double';
+        priceDoubleHelp.textContent = 'Prix du burger avec 2 viandes';
+        // priceDoubleGroup.style.display = 'block';
+        burgerMenuSection.style.display = 'block';
+    } else if (categoryName.includes('poulet')) {
+        // Catégorie Poulet
+        priceLabel.innerHTML = '🍗 Prix du produit';
+        priceHelp.textContent = 'Prix de base du produit poulet';
+        priceDoubleLabel.innerHTML = '🍗🍗 Prix portion double';
+        priceDoubleHelp.textContent = 'Prix pour une portion double (optionnel)';
+        // priceDoubleGroup.style.display = 'block';
+        burgerMenuSection.style.display = 'none';
+    } else if (categoryName.includes('dessert')) {
+        // Catégorie Desserts
+        priceLabel.innerHTML = '🍰 Prix du dessert';
+        priceHelp.textContent = 'Prix du dessert';
+        priceDoubleGroup.style.display = 'none';
+        burgerMenuSection.style.display = 'none';
+    } else if (categoryName.includes('boisson')) {
+        // Catégorie Boissons
+        priceLabel.innerHTML = '🥤 Prix de la boisson';
+        priceHelp.textContent = 'Prix de la boisson';
+        priceDoubleGroup.style.display = 'none';
+        burgerMenuSection.style.display = 'none';
+    } else if (categoryName.includes('accompagnement')) {
+        // Catégorie Accompagnements
+        priceLabel.innerHTML = '🍟 Prix de l\'accompagnement';
+        priceHelp.textContent = 'Prix de l\'accompagnement';
+        priceDoubleGroup.style.display = 'none';
+        burgerMenuSection.style.display = 'none';
+    } else if (categoryName.includes('menu')) {
+        // Catégorie Menus
+        priceLabel.innerHTML = '🍱 Prix du menu';
+        priceHelp.textContent = 'Prix du menu complet';
+        priceDoubleGroup.style.display = 'none';
+        burgerMenuSection.style.display = 'none';
+    } else {
+        // Catégorie par défaut
+        priceLabel.innerHTML = '💰 Prix du produit';
+        priceHelp.textContent = 'Prix de base du produit';
+        priceDoubleLabel.innerHTML = '💰💰 Prix version double';
+        priceDoubleHelp.textContent = 'Prix pour une version double (optionnel)';
+        priceDoubleGroup.style.display = 'block';
+        burgerMenuSection.style.display = 'none';
+    }
+}
+
+// Appliquer au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    updatePriceLabels();
+    
+    // Écouter les changements de catégorie
+    const categorySelect = document.getElementById('category_id');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', updatePriceLabels);
+    }
+});
+</script>

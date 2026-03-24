@@ -70,26 +70,37 @@ class MenuController extends Controller
             return;
         }
 
+        // Check if product is a burger
+        $categoryModel = new Category();
+        $category = $categoryModel->findById((int)$product['category_id']);
+        $isBurger = $category && stripos($category['name'], 'burger') !== false;
+        
         // Generate virtual viande + taille_menu options for burgers
-        if (isset($product['price_double']) && $product['price_double'] > 0) {
-            $viandeOptions = [
-                [
+        if ($isBurger) {
+            $viandeOptions = [];
+            
+            // Only add viande options if price_double is configured
+            if (isset($product['price_double']) && $product['price_double'] > 0) {
+                $viandeOptions[] = [
                     'id' => 'simple',
                     'name' => 'Simple 🥩',
                     'option_group' => 'viande',
                     'option_type' => 'radio',
                     'price_modifier' => 0,
                     'product_id' => $product['id']
-                ],
-                [
+                ];
+                
+                $viandeOptions[] = [
                     'id' => 'double',
                     'name' => 'Double 🥩🥩',
                     'option_group' => 'viande',
                     'option_type' => 'radio',
                     'price_modifier' => (float)$product['price_double'] - (float)$product['price'],
                     'product_id' => $product['id']
-                ]
-            ];
+                ];
+            }
+            
+            // Always add "Burger seul" option for burgers
             $burgerSeul = [
                 'id'             => 'burger_seul',
                 'name'           => 'Burger seul',
@@ -101,19 +112,22 @@ class MenuController extends Controller
             $product['options'] = array_merge($viandeOptions, [$burgerSeul], $product['options'] ?? []);
         }
 
-        // Load global supplements for this product
-        $supplementModel = new GlobalSupplement();
-        $supplements = $supplementModel->getByProduct((int)$id);
-        if (!empty($supplements)) {
-            foreach ($supplements as $supp) {
-                $product['options'][] = [
-                    'id' => $supp['id'],
-                    'name' => $supp['name'],
-                    'option_group' => 'supplements',
-                    'option_type' => 'checkbox',
-                    'price_modifier' => (float)$supp['price'],
-                    'product_id' => $product['id']
-                ];
+        // Load global supplements for burgers only
+        
+        if ($isBurger) {
+            $supplementModel = new GlobalSupplement();
+            $supplements = $supplementModel->getActive();
+            if (!empty($supplements)) {
+                foreach ($supplements as $supp) {
+                    $product['options'][] = [
+                        'id' => $supp['id'],
+                        'name' => $supp['name'],
+                        'option_group' => 'supplements',
+                        'option_type' => 'checkbox',
+                        'price_modifier' => (float)$supp['price'],
+                        'product_id' => $product['id']
+                    ];
+                }
             }
         }
 

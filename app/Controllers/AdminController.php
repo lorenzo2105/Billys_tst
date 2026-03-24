@@ -40,9 +40,6 @@ class AdminController extends Controller
         $this->layout('admin.product-form', [
             'categories' => (new Category())->getActive(),
             'product' => null,
-            'allSupplements' => (new GlobalSupplement())->getActive(),
-            'assignedSupplementIds' => [],
-            'menuPrices' => [],
             'pageTitle' => 'Nouveau Produit',
         ], 'layouts.admin');
     }
@@ -76,18 +73,12 @@ class AdminController extends Controller
 
         $productId = $productModel->create($createData);
 
+        // Save burger menu options (Menu M / Menu L)
+        $this->saveMenuOptions((int)$productId);
+
         foreach ((new Restaurant())->getActive() as $r) {
             $productModel->updateAvailability((int)$productId, (int)$r['id'], true);
         }
-
-        // Assign supplements
-        $supplements = $this->input('supplements', []);
-        if (!empty($supplements)) {
-            (new GlobalSupplement())->assignToProduct((int)$productId, $supplements);
-        }
-
-        // Save burger menu options (Menu M / Menu L)
-        $this->saveMenuOptions((int)$productId);
 
         Session::flash('success', 'Produit créé !');
         $this->redirect('/admin/products');
@@ -109,14 +100,25 @@ class AdminController extends Controller
             $menuPrices[$mo['name']] = (float)$mo['price_modifier'];
         }
 
-        $supplementModel = new GlobalSupplement();
+        // Get restaurant availability
+        $restaurantAvailability = [];
+        $restaurants = (new Restaurant())->findAll();
+        foreach ($restaurants as $r) {
+            $avail = $db->fetch(
+                "SELECT is_available FROM product_restaurant WHERE product_id = :pid AND restaurant_id = :rid",
+                ['pid' => (int)$id, 'rid' => $r['id']]
+            );
+            $restaurantAvailability[$r['id']] = [
+                'restaurant_name' => $r['name'],
+                'is_available' => $avail ? (bool)$avail['is_available'] : false
+            ];
+        }
+
         $this->layout('admin.product-form', [
             'product' => $product,
             'categories' => (new Category())->getActive(),
-            'allSupplements' => $supplementModel->getActive(),
-            'assignedSupplementIds' => $supplementModel->getAssignedIds((int)$id),
-            'restaurantAvailability' => $productModel->getAvailabilityPerRestaurant((int)$id),
             'menuPrices' => $menuPrices,
+            'restaurantAvailability' => $restaurantAvailability,
             'pageTitle' => 'Modifier: ' . $product['name'],
         ], 'layouts.admin');
     }
@@ -145,10 +147,6 @@ class AdminController extends Controller
         }
 
         $productModel->update((int)$id, $updateData);
-
-        // Update supplements assignment
-        $supplements = $this->input('supplements', []);
-        (new GlobalSupplement())->assignToProduct((int)$id, $supplements);
 
         // Update burger menu options (Menu M / Menu L)
         $this->saveMenuOptions((int)$id);
@@ -378,7 +376,7 @@ class AdminController extends Controller
                         ['price' => (float)$price, 'id' => $existing['id']]
                     );
                 } else {
-                    $db->insert(
+                    $db->execute(
                         "INSERT INTO product_options (product_id, name, price_modifier, option_group, is_active) VALUES (:pid, :name, :price, 'taille_menu', 1)",
                         ['pid' => $productId, 'name' => $name, 'price' => (float)$price]
                     );
@@ -399,7 +397,7 @@ class AdminController extends Controller
             'description' => $this->sanitize($this->input('description', '')),
             'price' => $this->input('price', '0'),
             'category_id' => $this->input('category_id', '0'),
-            'status' => $this->input('status', 'available'),
+            'status' => 'available', // Always available - real availability managed per restaurant
             'is_featured' => $this->input('is_featured'),
             'sort_order' => $this->input('sort_order', '0'),
         ];
@@ -415,20 +413,42 @@ class AdminController extends Controller
 
     private function handleImageUpload(): ?string
     {
-        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        if (!isset($_FILES['image'])) {
             return null;
         }
+        
         $file = $_FILES['image'];
+        
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
+                Session::flash('error', 'L\'image est trop volumineuse. Taille maximale: 10MB');
+            }
+            return null;
+        }
+        
         $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!in_array($file['type'], $allowed, true)) return null;
-        if ($file['size'] > 5 * 1024 * 1024) return null;
+        if (!in_array($file['type'], $allowed, true)) {
+            Session::flash('error', 'Format d\'image non supporté. Utilisez JPG, PNG, WEBP ou GIF.');
+            return null;
+        }
+        
+        // Increase limit to 10MB
+        if ($file['size'] > 10 * 1024 * 1024) {
+            Session::flash('error', 'L\'image est trop volumineuse. Taille maximale: 10MB');
+            return null;
+        }
 
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = uniqid('img_') . '.' . $ext;
         $uploadDir = BASE_PATH . '/public/assets/uploads/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
-        move_uploaded_file($file['tmp_name'], $uploadDir . $filename);
+        if (!move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+            Session::flash('error', 'Erreur lors de l\'upload de l\'image.');
+            return null;
+        }
+        
         return 'assets/uploads/' . $filename;
     }
 

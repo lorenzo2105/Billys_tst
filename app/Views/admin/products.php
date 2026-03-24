@@ -15,7 +15,6 @@
                         <th>Nom</th>
                         <th>Catégorie</th>
                         <th>Prix</th>
-                        <th>Statut</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -35,17 +34,6 @@
                         </td>
                         <td><?= htmlspecialchars($product['category_name']) ?></td>
                         <td><strong><?= formatPrice((float)$product['price']) ?></strong></td>
-                        <td>
-                            <span class="status-dot status-dot--<?= $product['status'] ?>"></span>
-                            <?php
-                            echo match($product['status']) {
-                                'available' => 'Disponible',
-                                'unavailable' => 'Indisponible',
-                                'out_of_stock' => 'Rupture',
-                                default => $product['status'],
-                            };
-                            ?>
-                        </td>
                         <td class="table-actions">
                             <a href="<?= $baseUrl ?>/admin/product/edit/<?= $product['id'] ?>" class="btn btn--sm btn--outline" title="Modifier">✏️</a>
                             <form method="POST" action="<?= $baseUrl ?>/admin/product/delete/<?= $product['id'] ?>"

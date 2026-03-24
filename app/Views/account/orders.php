@@ -31,7 +31,7 @@
                     <div class="order-card__body">
                         <span>📍 <?= htmlspecialchars($order['restaurant_name']) ?></span>
                         <span>📦 <?= $order['item_count'] ?> article(s)</span>
-                        <span>💰 <?= number_format((float)$order['total'], 2, ',', ' ') ?> €</span>
+                        <span>💰 <?= number_format((float)$order['total'], 2, ',', ' ') ?> XPF</span>
                     </div>
                     <div class="order-card__footer">
                         <span><?= date('d/m/Y à H:i', strtotime($order['created_at'])) ?></span>

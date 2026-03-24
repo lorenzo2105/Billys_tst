@@ -345,6 +345,8 @@ table { border-collapse: collapse; width: 100%; }
 }
 .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
 .product-card--unavailable { opacity: .6; }
+.product-card--link { text-decoration: none; color: inherit; cursor: pointer; }
+.product-card--clickable { cursor: pointer; }
 
 .product-card__image {
     position: relative;

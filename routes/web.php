@@ -10,6 +10,8 @@ $router->get('/', 'HomeController', 'index');
 $router->get('/menu', 'MenuController', 'index');
 $router->get('/menu/{restaurantId}', 'MenuController', 'byRestaurant');
 $router->get('/product/{id}', 'MenuController', 'show');
+$router->get('/contact', 'ContactController', 'index');
+$router->post('/contact/send', 'ContactController', 'send', ['csrf']);
 
 // ── Auth Routes ────────────────────────────────────────────
 $router->get('/login', 'AuthController', 'loginForm');

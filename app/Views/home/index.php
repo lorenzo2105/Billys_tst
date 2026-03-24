@@ -45,7 +45,9 @@
         <p class="section__subtitle">Les favoris de nos clients</p>
         <div class="products-grid">
             <?php foreach ($featured as $product): ?>
-            <div class="product-card">
+            <div class="product-card product-card--clickable" 
+                 data-product-id="<?= $product['id'] ?>"
+                 data-has-options="1">
                 <div class="product-card__image">
                     <?php if ($product['image']): ?>
                         <img src="<?= $baseUrl ?>/<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" loading="lazy">
@@ -62,12 +64,9 @@
                     <p class="product-card__desc"><?= htmlspecialchars($product['description'] ?? '') ?></p>
                     <div class="product-card__footer">
                         <span class="product-card__price"><?= formatPrice((float)$product['price']) ?></span>
-                        <button class="btn btn--primary btn--sm add-to-cart-quick"
-                                data-product-id="<?= $product['id'] ?>"
-                                data-product-name="<?= htmlspecialchars($product['name']) ?>"
-                                data-product-price="<?= $product['price'] ?>">
-                            + Ajouter
-                        </button>
+                        <span class="btn btn--primary btn--sm">
+                            Voir détails →
+                        </span>
                     </div>
                 </div>
             </div>
@@ -87,3 +86,14 @@
         </div>
     </div>
 </section>
+
+<!-- Product Configuration Modal -->
+<div class="modal" id="productModal">
+    <div class="modal__backdrop" onclick="App.closeProductModal()"></div>
+    <div class="modal__content modal__content--config">
+        <button class="modal__close" onclick="App.closeProductModal()">&times;</button>
+        <div id="productModalBody">
+            <div class="modal-loading">⏳ Chargement...</div>
+        </div>
+    </div>
+</div>

@@ -12,7 +12,18 @@ class Order extends Model
 
     public function generateOrderNumber(): string
     {
-        return 'BF-' . strtoupper(substr(uniqid(), -6)) . '-' . date('dHi');
+        $year = date('Y');
+        
+        // Get the count of orders for this year
+        $count = $this->db->fetch(
+            "SELECT COUNT(*) as count FROM {$this->table} WHERE YEAR(created_at) = :year",
+            ['year' => $year]
+        );
+        
+        $orderCount = ($count['count'] ?? 0) + 1;
+        
+        // Format: 2026-001, 2026-002, etc.
+        return $year . '-' . str_pad((string)$orderCount, 3, '0', STR_PAD_LEFT);
     }
 
     public function createOrder(array $data, array $items): int

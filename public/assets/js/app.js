@@ -164,6 +164,22 @@ const App = {
                 this.addToCart(productId, 1, 1, []);
             });
         });
+
+        // Clickable product cards on home page
+        document.querySelectorAll('.product-card--clickable').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productId = card.dataset.productId;
+                // Use first restaurant as default for home page
+                const restaurantId = 1;
+                
+                if (card.dataset.hasOptions === '1') {
+                    this.openProductModal(productId, restaurantId);
+                } else {
+                    this.addToCart(productId, 1, restaurantId, []);
+                }
+            });
+        });
     },
 
     // ── Product Detail Page ──────────────────────────────────

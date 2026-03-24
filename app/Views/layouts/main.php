@@ -20,6 +20,7 @@
             <nav class="header__nav" id="mainNav">
                 <a href="<?= $baseUrl ?>/" class="nav-link">Accueil</a>
                 <a href="<?= $baseUrl ?>/menu" class="nav-link">Menu</a>
+                <a href="<?= $baseUrl ?>/contact" class="nav-link">Contact</a>
                 <?php if (\App\Core\Auth::check()): ?>
                     <a href="<?= $baseUrl ?>/account/orders" class="nav-link">Mes Commandes</a>
                 <?php endif; ?>
@@ -89,6 +90,7 @@
                     <h4>Navigation</h4>
                     <a href="<?= $baseUrl ?>/">Accueil</a>
                     <a href="<?= $baseUrl ?>/menu">Menu</a>
+                    <a href="<?= $baseUrl ?>/contact">Contact</a>
                     <a href="<?= $baseUrl ?>/cart">Panier</a>
                 </div>
                 <div class="footer__links">
